@@ -1,0 +1,5 @@
+instagrapi
+pydrive2
+python-dotenv
+transformers
+torch
