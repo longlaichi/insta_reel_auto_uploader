@@ -1,8 +1,8 @@
-instagrapi
-pydrive2
 python-dotenv
 transformers
 torch
 google-api-python-client
 google-auth-httplib2
 google-auth-oauthlib
+pydrive
+instagrapi
