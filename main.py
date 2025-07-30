@@ -4,10 +4,16 @@ from instagrapi import Client
 from pydrive2.auth import GoogleAuth
 from pydrive2.drive import GoogleDrive
 from caption_generator import generate_caption
+from dotenv import load_dotenv
 
-# Instagram credentials
-USERNAME = "dailysparkshots"
-PASSWORD = "PoorveshNew123*"
+# Load credentials from .env file
+load_dotenv()
+
+USERNAME = os.getenv("IG_USERNAME")
+PASSWORD = os.getenv("IG_PASSWORD")
+
+if not USERNAME or not PASSWORD:
+    raise ValueError("Instagram credentials not set in .env file")
 
 def login_instagram():
     cl = Client()
@@ -15,11 +21,22 @@ def login_instagram():
     print("✅ Logged into Instagram (2FA disabled).")
     return cl
 
-def get_ordered_videos_from_drive():
+def get_authenticated_drive():
     gauth = GoogleAuth()
-    gauth.LocalWebserverAuth()
-    drive = GoogleDrive(gauth)
+    gauth.LoadCredentialsFile("mycreds.txt")
 
+    if gauth.credentials is None:
+        gauth.LocalWebserverAuth()
+    elif gauth.access_token_expired:
+        gauth.Refresh()
+    else:
+        gauth.Authorize()
+
+    gauth.SaveCredentialsFile("mycreds.txt")
+    drive = GoogleDrive(gauth)
+    return drive
+
+def get_ordered_videos_from_drive(drive):
     folder_ids = [
         "1GquOL-1HCnCuUy5-Ia667DSVIuZUrfro", "1TRn31FGxltDk62dc22aCytqchXsjIh0V",
         "1ViVTvGDF2xZBSjMFDqRVA0c144VnkzNX", "1oLunOX7LwtrMUcXuizMYJP4jXwG9G28C",
@@ -42,9 +59,9 @@ def get_ordered_videos_from_drive():
 
         for file in sorted_files:
             if file['id'] not in uploaded_files:
-                return file, drive
+                return file
 
-    return None, None
+    return None
 
 def upload_reel_to_instagram(cl, video_path, caption):
     try:
@@ -58,7 +75,9 @@ def mark_as_uploaded(file_id):
         f.write(file_id + "\n")
 
 if __name__ == "__main__":
-    file, drive = get_ordered_videos_from_drive()
+    drive = get_authenticated_drive()
+    file = get_ordered_videos_from_drive(drive)
+
     if file is None:
         print("✅ All videos already uploaded.")
         exit()
