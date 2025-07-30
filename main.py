@@ -1,107 +1,57 @@
 import os
-import time
+import json
+from pydrive.auth import GoogleAuth
+from pydrive.drive import GoogleDrive
 from instagrapi import Client
-from pydrive2.auth import GoogleAuth
-from pydrive2.drive import GoogleDrive
 from caption_generator import generate_caption
-from dotenv import load_dotenv
+from record_keeper import load_posted, save_posted
+from helpers import download_next_reel, cleanup_downloaded
 
-# Load credentials from .env file
-load_dotenv()
-
-USERNAME = os.getenv("IG_USERNAME")
-PASSWORD = os.getenv("IG_PASSWORD")
-
-if not USERNAME or not PASSWORD:
-    raise ValueError("Instagram credentials not set in .env file")
-
-def login_instagram():
-    cl = Client()
-    cl.login(USERNAME, PASSWORD)
-    print("✅ Logged into Instagram (2FA disabled).")
-    return cl
-
-def get_authenticated_drive():
+def authenticate_drive():
     gauth = GoogleAuth()
-    gauth.LoadCredentialsFile("mycreds.txt")
+    
+    creds_dict = json.loads(os.environ['GOOGLE_SERVICE_ACCOUNT'])
+    gauth.credentials = gauth.LoadServiceConfigSettings()
+    
+    # Write creds to a temporary file
+    temp_file = '/tmp/service_account.json'
+    with open(temp_file, 'w') as f:
+        json.dump(creds_dict, f)
 
-    if gauth.credentials is None:
-        gauth.LocalWebserverAuth()
-    elif gauth.access_token_expired:
-        gauth.Refresh()
-    else:
-        gauth.Authorize()
+    gauth.LoadCredentialsFile(temp_file)
+    gauth.ServiceAuth()  # Use service account
+    return GoogleDrive(gauth)
 
-    gauth.SaveCredentialsFile("mycreds.txt")
-    drive = GoogleDrive(gauth)
-    return drive
+def main():
+    print("Authenticating with Google Drive...")
+    drive = authenticate_drive()
 
-def get_ordered_videos_from_drive(drive):
-    folder_ids = [
-        "1GquOL-1HCnCuUy5-Ia667DSVIuZUrfro", "1TRn31FGxltDk62dc22aCytqchXsjIh0V",
-        "1ViVTvGDF2xZBSjMFDqRVA0c144VnkzNX", "1oLunOX7LwtrMUcXuizMYJP4jXwG9G28C",
-        "17wLMV5b637nzI58nrEVRx0CTf5rLSgnI", "166SE6ulnfwvD7lYRISzp5-L9WnYEe7o-",
-        "1NAW6ICWIAmIpV6U7UKejXrFsNoeB_XBM", "1zT7AfLVXpa6xBNKyytwU3o4E8lmEifGD",
-        "1WbmuBYqsfmygSJH0VvdAUeWyozUNGxHX"
-    ]
+    print("Authenticating with Instagram...")
+    cl = Client()
+    cl.login(os.environ['IG_USERNAME'], os.environ['IG_PASSWORD'])
 
-    uploaded_files = set()
-    if os.path.exists("uploaded.txt"):
-        with open("uploaded.txt", "r") as f:
-            uploaded_files = set(line.strip() for line in f)
+    folder_ids = os.environ['DRIVE_FOLDER_IDS'].split(',')
+    posted = load_posted()
 
-    for folder_id in folder_ids:
-        file_list = drive.ListFile({
-            'q': f"'{folder_id}' in parents and trashed=false and mimeType contains 'video'"
-        }).GetList()
+    print("Looking for next reel to upload...")
+    file_name = download_next_reel(drive, folder_ids, posted)
+    if not file_name:
+        print("All reels already posted!")
+        return
 
-        sorted_files = sorted(file_list, key=lambda x: x['title'])
+    print("Generating caption...")
+    caption = generate_caption(file_name)
 
-        for file in sorted_files:
-            if file['id'] not in uploaded_files:
-                return file
+    print("Uploading to Instagram...")
+    cl.clip_upload(file_name, caption)
 
-    return None
+    print("Updating records...")
+    posted.append(file_name)
+    save_posted(posted)
 
-def upload_reel_to_instagram(cl, video_path, caption):
-    try:
-        cl.clip_upload(video_path, caption)
-        print("✅ Reel uploaded successfully.")
-    except Exception as e:
-        print("❌ Failed to upload reel:", e)
+    print("Cleaning up local file...")
+    cleanup_downloaded(file_name)
+    print("✅ Upload complete!")
 
-def mark_as_uploaded(file_id):
-    with open("uploaded.txt", "a") as f:
-        f.write(file_id + "\n")
-
-if __name__ == "__main__":
-    drive = get_authenticated_drive()
-    file = get_ordered_videos_from_drive(drive)
-
-    if file is None:
-        print("✅ All videos already uploaded.")
-        exit()
-
-    print(f"📥 Downloading: {file['title']}")
-    file.GetContentFile("reel.mp4")
-
-    print("🧠 Generating caption...")
-    caption = generate_caption("reel.mp4")
-
-    print("🔐 Logging into Instagram...")
-    cl = login_instagram()
-
-    print("🚀 Uploading to Instagram...")
-    upload_reel_to_instagram(cl, "reel.mp4", caption)
-
-    print("📌 Marking video as uploaded...")
-    mark_as_uploaded(file['id'])
-
-    print("🧹 Waiting briefly before cleanup...")
-    time.sleep(2)
-
-    try:
-        os.remove("reel.mp4")
-        print("🧼 Local file deleted.")
-    except PermissionError:
-        print("⚠️ Could not delete reel.mp4. File may still be in use.")
+if __name__ == '__main__':
+    main()

@@ -3,11 +3,16 @@ name: Daily Reel Upload
 on:
   schedule:
     - cron: '30 3 * * *'  # Runs daily at 9:00 AM IST
-  workflow_dispatch:     # Allows manual trigger
+  workflow_dispatch:       # Allows manual trigger
 
 jobs:
   run:
     runs-on: ubuntu-latest
+
+    env:
+      IG_USERNAME: ${{ secrets.IG_USERNAME }}
+      IG_PASSWORD: ${{ secrets.IG_PASSWORD }}
+      DRIVE_FOLDER_IDS: ${{ secrets.DRIVE_FOLDER_IDS }}
 
     steps:
       - name: Checkout code
@@ -22,8 +27,4 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Run the script
-        env:
-          IG_USERNAME: ${{ secrets.IG_USERNAME }}
-          IG_PASSWORD: ${{ secrets.IG_PASSWORD }}
-          DRIVE_FOLDER_IDS: ${{ secrets.DRIVE_FOLDER_IDS }}
         run: python main.py
