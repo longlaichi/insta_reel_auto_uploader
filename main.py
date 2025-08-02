@@ -6,21 +6,21 @@ from instagrapi import Client
 from caption_generator import generate_caption
 from record_keeper import load_posted, save_posted
 from helpers import download_next_reel, cleanup_downloaded
-
 def authenticate_drive():
-    gauth = GoogleAuth()
-    
-    creds_dict = json.loads(os.environ['GOOGLE_SERVICE_ACCOUNT'])
-    gauth.credentials = gauth.LoadServiceConfigSettings()
-    
-    # Write creds to a temporary file
-    temp_file = '/tmp/service_account.json'
-    with open(temp_file, 'w') as f:
-        json.dump(creds_dict, f)
+    from oauth2client.service_account import ServiceAccountCredentials
+    from pydrive2.auth import GoogleAuth
+    from pydrive2.drive import GoogleDrive
 
-    gauth.LoadCredentialsFile(temp_file)
-    gauth.ServiceAuth()  # Use service account
+    creds_dict = json.loads(os.environ['GOOGLE_SERVICE_ACCOUNT'])
+
+    scope = ['https://www.googleapis.com/auth/drive']
+    credentials = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+
+    gauth = GoogleAuth()
+    gauth.credentials = credentials
+
     return GoogleDrive(gauth)
+
 
 def main():
     print("Authenticating with Google Drive...")
