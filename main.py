@@ -1,7 +1,7 @@
 import os
 import json
-from pydrive.auth import GoogleAuth
-from pydrive.drive import GoogleDrive
+from pydrive2.auth import GoogleAuth
+from pydrive2.drive import GoogleDrive
 from instagrapi import Client
 from caption_generator import generate_caption
 from record_keeper import load_posted, save_posted
