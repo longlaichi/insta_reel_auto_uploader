@@ -4,6 +4,6 @@ torch
 google-api-python-client
 google-auth-httplib2
 google-auth-oauthlib
-pydrive
+pydrive2
 instagrapi
 oauth2client
