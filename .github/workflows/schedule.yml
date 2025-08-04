@@ -28,12 +28,18 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      - name: Create placeholder posted.json if not exists
+        run: |
+          if [ ! -f posted.json ]; then
+            echo "[]" > posted.json
+          fi
+
       - name: Restore posted.json if exists
         uses: actions/download-artifact@v4
         with:
           name: posted-json
           path: .
-        continue-on-error: true  # No problem if artifact is missing (first run)
+        continue-on-error: true
 
       - name: Run script
         run: python main.py
