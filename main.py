@@ -6,19 +6,17 @@ from instagrapi import Client
 from caption_generator import generate_caption
 from record_keeper import load_posted, save_posted
 from helpers import download_next_reel, cleanup_downloaded
+
+
 def authenticate_drive():
     from oauth2client.service_account import ServiceAccountCredentials
-    from pydrive2.auth import GoogleAuth
-    from pydrive2.drive import GoogleDrive
 
     creds_dict = json.loads(os.environ['GOOGLE_SERVICE_ACCOUNT'])
-
     scope = ['https://www.googleapis.com/auth/drive']
     credentials = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
 
     gauth = GoogleAuth()
     gauth.credentials = credentials
-
     return GoogleDrive(gauth)
 
 
@@ -28,7 +26,15 @@ def main():
 
     print("Authenticating with Instagram...")
     cl = Client()
-    cl.login(os.environ['IG_USERNAME'], os.environ['IG_PASSWORD'])
+    session_str = os.environ.get("IG_SESSION")
+    if session_str:
+        with open("session.json", "w") as f:
+            f.write(session_str)
+        cl.load_settings("session.json")
+        cl.get_timeline_feed()  # Validate session
+        print("✅ Logged in using session.")
+    else:
+        raise ValueError("No IG_SESSION provided.")
 
     folder_ids = os.environ['DRIVE_FOLDER_IDS'].split(',')
     posted = load_posted()
@@ -52,6 +58,7 @@ def main():
     print("Cleaning up local file...")
     cleanup_downloaded(file_name)
     print("✅ Upload complete!")
+
 
 if __name__ == '__main__':
     main()
