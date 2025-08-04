@@ -1,6 +1,6 @@
 import os
 
-def download_next_reel(drive, folder_ids, posted_files):
+def download_next_reel(drive, folder_ids, posted_file_ids):
     for folder_id in folder_ids:
         file_list = drive.ListFile({
             'q': f"'{folder_id}' in parents and trashed=false and mimeType='video/mp4'"
@@ -10,11 +10,12 @@ def download_next_reel(drive, folder_ids, posted_files):
         sorted_files = sorted(file_list, key=lambda x: x['title'])
 
         for file in sorted_files:
-            if file['title'] not in posted_files:
+            if file['id'] not in posted_file_ids:
                 print(f"Downloading {file['title']} from folder {folder_id}")
-                file.GetContentFile(file['title'])
-                return file['title']
-    return None
+                file.GetContentFile(file['title'])  # downloads locally
+                return file['id'], file['title']  # return both ID and filename
+
+    return None, None
 
 def cleanup_downloaded(file_name):
     try:

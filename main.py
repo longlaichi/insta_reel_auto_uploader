@@ -40,11 +40,12 @@ def main():
     posted = load_posted()
 
     print("Looking for next reel to upload...")
-    file_name = download_next_reel(drive, folder_ids, posted)
-    if not file_name:
+    file_id, file_name = download_next_reel(drive, folder_ids, posted)
+    if not file_id:
         print("All reels already posted!")
         return
 
+    
     print("Generating caption...")
     caption = generate_caption(file_name)
 
@@ -52,7 +53,7 @@ def main():
     cl.clip_upload(file_name, caption)
 
     print("Updating records...")
-    posted.append(file_name)
+    posted.append(file_id)
     save_posted(posted)
 
     print("Cleaning up local file...")
