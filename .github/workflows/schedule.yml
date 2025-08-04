@@ -2,7 +2,7 @@ name: Daily Reel Upload
 
 on:
   schedule:
-    - cron: '50 14 * * *'  # Runs daily at 8:20 PM IST (14:50 UTC)
+    - cron: '30 3 * * *'  # Runs daily at 9:00 AM IST (03:30 UTC)
   workflow_dispatch:       # Allows manual trigger
 
 jobs:
@@ -32,7 +32,8 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: posted-json
-        continue-on-error: true  # Ignore if first run (no artifact exists yet)
+          path: .
+        continue-on-error: true  # Ignore error if no previous artifact exists
 
       - name: Run script
         run: python main.py
