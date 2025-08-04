@@ -11,4 +11,4 @@ def load_posted():
 
 def save_posted(posted):
     with open(RECORD_FILE, "w") as f:
-        json.dump(posted, f)
+        json.dump(posted, f, indent=2)
