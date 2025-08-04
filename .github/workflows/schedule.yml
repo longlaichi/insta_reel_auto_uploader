@@ -2,7 +2,7 @@ name: Daily Reel Upload
 
 on:
   schedule:
-    - cron: '30 3 * * *'  # Runs daily at 9:00 AM IST
+    - cron: '50 14 * * *'  # Runs daily at 8:20 PM IST (14:50 UTC)
   workflow_dispatch:       # Allows manual trigger
 
 jobs:
@@ -13,8 +13,9 @@ jobs:
       IG_USERNAME: ${{ secrets.IG_USERNAME }}
       IG_PASSWORD: ${{ secrets.IG_PASSWORD }}
       DRIVE_FOLDER_IDS: ${{ secrets.DRIVE_FOLDER_IDS }}
-      GOOGLE_SERVICE_ACCOUNT: ${{ secrets.GOOGLE_SERVICE_ACCOUNT }}  # ✅ FIXED: Added this line
+      GOOGLE_SERVICE_ACCOUNT: ${{ secrets.GOOGLE_SERVICE_ACCOUNT }}
       IG_SESSION: ${{ secrets.IG_SESSION }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -27,5 +28,18 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Run the script
+      - name: Restore posted.json if exists
+        uses: actions/download-artifact@v4
+        with:
+          name: posted-json
+        continue-on-error: true  # Ignore if first run (no artifact exists yet)
+
+      - name: Run script
         run: python main.py
+
+      - name: Save posted.json
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: posted-json
+          path: posted.json
