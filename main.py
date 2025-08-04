@@ -57,6 +57,13 @@ def main():
 
     print("Cleaning up local file...")
     cleanup_downloaded(file_name)
+
+    # ✅ New debug step to verify file creation (important for GitHub Actions)
+    if os.path.exists("posted.json"):
+        print("✅ posted.json saved successfully.")
+    else:
+        print("⚠️ Error: posted.json not found after saving!")
+
     print("✅ Upload complete!")
 
 
