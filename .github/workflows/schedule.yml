@@ -14,7 +14,7 @@ jobs:
       IG_PASSWORD: ${{ secrets.IG_PASSWORD }}
       DRIVE_FOLDER_IDS: ${{ secrets.DRIVE_FOLDER_IDS }}
       GOOGLE_SERVICE_ACCOUNT: ${{ secrets.GOOGLE_SERVICE_ACCOUNT }}  # ✅ FIXED: Added this line
-
+      IG_SESSION: ${{ secrets.IG_SESSION }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
