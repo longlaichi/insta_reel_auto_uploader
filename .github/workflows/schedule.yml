@@ -3,7 +3,7 @@ name: Daily Reel Upload
 on:
   schedule:
     - cron: '30 3 * * *'  # Runs daily at 9:00 AM IST (03:30 UTC)
-  workflow_dispatch:       # Allows manual trigger
+  workflow_dispatch:
 
 jobs:
   run:
@@ -33,7 +33,7 @@ jobs:
         with:
           name: posted-json
           path: .
-        continue-on-error: true  # Ignore error if no previous artifact exists
+        continue-on-error: true  # No problem if artifact is missing (first run)
 
       - name: Run script
         run: python main.py
