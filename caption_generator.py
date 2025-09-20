@@ -1,6 +1,6 @@
 import random
 
-def generate_general_caption(video_path):
+def generate_caption(video_path):
     # 100 SEO-optimized general captions
     base_captions = [
         "Watch till the end for something amazing! ✨",
